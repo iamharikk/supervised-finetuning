@@ -45,13 +45,14 @@ class FinancialQAModelTester:
             outputs = self.model.generate(
                 inputs,
                 attention_mask=attention_mask,
-                max_new_tokens=50,
-                temperature=0.1,
-                do_sample=False,
+                max_new_tokens=80,
+                do_sample=True,
+                temperature=0.7,
+                top_p=0.9,
                 pad_token_id=self.tokenizer.eos_token_id,
                 eos_token_id=self.tokenizer.eos_token_id,
                 num_return_sequences=1,
-                repetition_penalty=1.2
+                repetition_penalty=1.1
             )
         
         # Decode response
