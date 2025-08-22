@@ -168,7 +168,7 @@ class FinancialQAModelTester:
             if is_correct:
                 correct_responses += 1
                 
-            print(f"{i+1}. {'✓' if is_correct else '✗'} Question: {question[:50]}...")
+            print(f"{i+1}. {'[PASS]' if is_correct else '[FAIL]'} Question: {question[:50]}...")
         
         accuracy = (correct_responses / total_samples) * 100
         print(f"\nSimple Accuracy: {accuracy:.1f}% ({correct_responses}/{total_samples})")
