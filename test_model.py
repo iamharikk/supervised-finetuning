@@ -35,13 +35,16 @@ class FinancialQAModelTester:
         # Format the input prompt
         prompt = f"Answer the following financial question about TCS: {question}"
         
-        # Tokenize input
-        inputs = self.tokenizer.encode(prompt, return_tensors='pt').to(self.device)
+        # Tokenize input with attention mask
+        encoding = self.tokenizer(prompt, return_tensors='pt', padding=True)
+        inputs = encoding['input_ids'].to(self.device)
+        attention_mask = encoding['attention_mask'].to(self.device)
         
         # Generate response
         with torch.no_grad():
             outputs = self.model.generate(
                 inputs,
+                attention_mask=attention_mask,
                 max_new_tokens=50,
                 temperature=0.1,
                 do_sample=False,
