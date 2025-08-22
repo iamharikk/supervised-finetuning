@@ -110,10 +110,10 @@ class GPT2FineTuner:
             warmup_steps=warmup_steps,
             weight_decay=0.01,
             logging_dir=f'{self.output_dir}/logs',
-            logging_steps=10,
+            logging_steps=5,
             save_steps=save_steps,
             eval_steps=eval_steps,
-            evaluation_strategy="steps",
+            eval_strategy="steps",
             save_total_limit=2,
             prediction_loss_only=True,
             learning_rate=learning_rate,
@@ -170,15 +170,15 @@ def main():
     # Setup model
     fine_tuner.setup_model_and_tokenizer()
     
-    # Train the model
+    # Train the model (reduced parameters for faster training)
     fine_tuner.train(
         data_path='data/training_data.json',
-        epochs=5,
-        batch_size=2,
+        epochs=2,  # Reduced from 5
+        batch_size=1,  # Reduced from 2 for memory efficiency
         learning_rate=5e-5,
-        save_steps=50,
-        eval_steps=50,
-        warmup_steps=20
+        save_steps=25,  # More frequent saves
+        eval_steps=25,  # More frequent evaluation
+        warmup_steps=10  # Reduced warmup
     )
     
     print("Fine-tuning completed!")
