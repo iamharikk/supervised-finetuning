@@ -173,7 +173,7 @@ def main():
     # Train the model (improved parameters for better quality)
     fine_tuner.train(
         data_path='data/training_data.json',
-        epochs=4,  # Increased for better learning
+        epochs=8,  # Increased for better memorization of financial facts
         batch_size=1,  # Keep at 1 for memory efficiency
         learning_rate=2e-5,  # Lower learning rate for stability
         save_steps=25,  # More frequent saves
