@@ -102,12 +102,12 @@ class DistilBERTQATester:
     def test_with_sample_questions(self):
         """Test the model with predefined sample questions."""
         sample_questions = [
-            "What was TCS's sales turnover in Mar '25?",
-            "What was TCS's net profit in Mar '25?",
-            "What was TCS's employee cost in Mar '25?",
-            "What was the growth in TCS's net profit from Mar '24 to Mar '25?",
+            "What was TCS's sales turnover in 2025?",
+            "What was TCS's net profit in 2025?",
+            "What was TCS's employee cost in 2025?",
+            "What was the growth in TCS's net profit from 2024 to 2025?",
             "What is TCS's profit margin in 2025?",
-            "What was TCS's total income in Mar '24?"
+            "What was TCS's total income in 2024?"
         ]
         
         print("\n" + "="*60)
@@ -211,16 +211,16 @@ class DistilBERTQATester:
         # Test with different question types
         question_types = {
             "Specific Values": [
-                "What was TCS's sales turnover in Mar '25?",
-                "What was TCS's net profit in Mar '24?"
+                "What was TCS's sales turnover in 2025?",
+                "What was TCS's net profit in 2024?"
             ],
             "Growth Questions": [
-                "What was the growth in TCS's net profit from Mar '24 to Mar '25?",
-                "How much did TCS's employee cost increase from Mar '24 to Mar '25?"
+                "What was the growth in TCS's net profit from 2024 to 2025?",
+                "How much did TCS's employee cost increase from 2024 to 2025?"
             ],
             "Ratios/Percentages": [
                 "What is TCS's profit margin in 2025?",
-                "What was TCS's equity dividend percentage in Mar '25?"
+                "What was TCS's equity dividend percentage in 2025?"
             ]
         }
         
