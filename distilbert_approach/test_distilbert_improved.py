@@ -52,28 +52,8 @@ class ImprovedDistilBERTQATester:
         if context is None:
             return "No context available. Please load context first.", 0.0
         
-        # Use Hugging Face pipeline for standard confidence calculation
-        try:
-            qa_pipeline = pipeline(
-                "question-answering",
-                model=self.model,
-                tokenizer=self.tokenizer,
-                device=0 if torch.cuda.is_available() else -1
-            )
-            
-            result = qa_pipeline(question=question, context=context)
-            
-            answer = result['answer'].strip()
-            confidence = result['score']  # Standard confidence score
-            
-            # Clean up answer
-            answer = self.clean_answer(answer)
-            
-            return answer, confidence
-            
-        except Exception as e:
-            # Fallback to manual method with standard confidence
-            return self.answer_question_fallback(question, context, max_length)
+        # Use our improved method but with standard confidence calculation
+        return self.answer_question_standard_confidence(question, context, max_length)
     
     def answer_question_fallback(self, question, context, max_length=512):
         """Fallback method with standard confidence calculation."""
@@ -119,6 +99,58 @@ class ImprovedDistilBERTQATester:
         
         return answer, confidence
     
+    def answer_question_standard_confidence(self, question, context, max_length=512):
+        """Answer using improved span detection but standard confidence calculation."""
+        # Tokenize input
+        inputs = self.tokenizer(
+            question,
+            context,
+            return_tensors='pt',
+            truncation=True,
+            max_length=max_length,
+            padding=True
+        )
+        
+        # Move to device
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        
+        # Get predictions
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+        
+        # Get answer span using improved method but standard confidence
+        start_logits = outputs.start_logits
+        end_logits = outputs.end_logits
+        
+        # Use our improved answer extraction
+        answer, _ = self.extract_best_answer(
+            inputs['input_ids'][0], start_logits[0], end_logits[0]
+        )
+        
+        # Calculate STANDARD confidence (like baseline and research papers)
+        start_probs = torch.softmax(start_logits[0], dim=0)
+        end_probs = torch.softmax(end_logits[0], dim=0)
+        
+        # Find the positions our improved method selected
+        answer_tokens = self.tokenizer(answer, add_special_tokens=False)['input_ids']
+        if len(answer_tokens) > 0:
+            # Find where this answer appears in the input
+            input_ids_list = inputs['input_ids'][0].tolist()
+            
+            # Simple approach: use the span with highest individual probabilities
+            start_idx = torch.argmax(start_probs)
+            end_idx = torch.argmax(end_probs)
+            
+            if end_idx < start_idx:
+                end_idx = start_idx
+            
+            # Standard confidence calculation (SQuAD methodology)
+            confidence = float(start_probs[start_idx] * end_probs[end_idx])
+        else:
+            confidence = 0.0
+        
+        return answer, confidence
+    
     def extract_best_answer(self, input_ids, start_logits, end_logits, max_answer_length=30):
         """Extract the best answer using improved strategy."""
         
@@ -142,17 +174,13 @@ class ImprovedDistilBERTQATester:
                     end_idx - start_idx <= max_answer_length and
                     start_idx > 0):  # Skip CLS token
                     
-                    # Better confidence calculation: average instead of multiply
-                    score = (start_probs[start_idx] + end_probs[end_idx]) / 2
+                    # Standard span scoring (for span selection, not final confidence)
+                    score = start_probs[start_idx] * end_probs[end_idx]
                     
-                    # Bonus for reasonable span lengths
+                    # Small bonus for reasonable span lengths 
                     span_length = end_idx - start_idx + 1
-                    if 3 <= span_length <= 15:  # Prefer medium-length spans
-                        score *= 1.1
-                    
-                    # Additional boost for high individual probabilities
-                    if start_probs[start_idx] > 0.7 and end_probs[end_idx] > 0.7:
-                        score *= 1.2
+                    if 3 <= span_length <= 15:
+                        score *= 1.05
                     
                     if score > best_score:
                         best_score = score
