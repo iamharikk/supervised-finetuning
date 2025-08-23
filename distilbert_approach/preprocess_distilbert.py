@@ -125,8 +125,8 @@ def create_simple_qa_format(qa_pairs: List[Tuple[str, str]]) -> List[Dict]:
     return simple_data
 
 def main():
-    input_file = "data/q-and-a/fin-data-qa-pairs.txt"
-    simple_output = "data/distilbert_simple_format.json"
+    input_file = "../data/q-and-a/fin-data-qa-pairs.txt"
+    simple_output = "../data/distilbert_simple_format.json"
     
     print("Parsing Q&A pairs...")
     qa_pairs = parse_qa_pairs(input_file)
