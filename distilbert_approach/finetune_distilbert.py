@@ -70,7 +70,9 @@ class DistilBERTQADataset(Dataset):
             truncation=True,
             padding='max_length',
             max_length=self.max_length,
-            return_tensors='pt'
+            return_tensors='pt',
+            return_overflowing_tokens=False,
+            verbose=False
         )
         
         # Simple approach: find answer in tokenized sequence
