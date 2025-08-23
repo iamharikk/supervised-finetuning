@@ -72,17 +72,41 @@ class DistilBERTQADataset(Dataset):
             max_length=self.max_length,
             return_tensors='pt',
             return_overflowing_tokens=False,
+            return_offsets_mapping=True,
             verbose=False
         )
         
-        # Simple approach: find answer in tokenized sequence
-        # Tokenize the answer separately to find approximate positions
-        answer_tokens = self.tokenizer(example['answer'], add_special_tokens=False)['input_ids']
+        # Find the actual token positions for the answer
+        offset_mapping = encoding['offset_mapping'].squeeze().tolist()
+        start_char = example['start_char']
+        end_char = example['end_char']
         
-        # For simplicity, use fixed positions (this is a limitation but will work)
-        # In practice, you'd want more sophisticated token alignment
-        start_token = 1  # After [CLS] token
-        end_token = min(start_token + len(answer_tokens), self.max_length - 2)
+        # Find token positions that correspond to the character positions
+        start_token = 0
+        end_token = 0
+        
+        for i, (offset_start, offset_end) in enumerate(offset_mapping):
+            # Skip special tokens (they have offset (0,0))
+            if offset_start == 0 and offset_end == 0:
+                continue
+                
+            # Find start token
+            if start_token == 0 and offset_start <= start_char < offset_end:
+                start_token = i
+            
+            # Find end token  
+            if offset_start < end_char <= offset_end:
+                end_token = i
+                break
+        
+        # Fallback if no proper alignment found
+        if start_token == 0 or end_token == 0:
+            start_token = 1
+            end_token = min(10, self.max_length - 2)
+        
+        # Ensure end >= start
+        if end_token < start_token:
+            end_token = start_token
         
         return {
             'input_ids': encoding['input_ids'].squeeze(),
