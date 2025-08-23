@@ -103,12 +103,17 @@ class ImprovedDistilBERTQATester:
                     end_idx - start_idx <= max_answer_length and
                     start_idx > 0):  # Skip CLS token
                     
-                    score = start_probs[start_idx] * end_probs[end_idx]
+                    # Better confidence calculation: average instead of multiply
+                    score = (start_probs[start_idx] + end_probs[end_idx]) / 2
                     
                     # Bonus for reasonable span lengths
                     span_length = end_idx - start_idx + 1
                     if 3 <= span_length <= 15:  # Prefer medium-length spans
                         score *= 1.1
+                    
+                    # Additional boost for high individual probabilities
+                    if start_probs[start_idx] > 0.7 and end_probs[end_idx] > 0.7:
+                        score *= 1.2
                     
                     if score > best_score:
                         best_score = score
