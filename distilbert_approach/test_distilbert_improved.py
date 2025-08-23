@@ -1,6 +1,6 @@
 import torch
 import json
-from transformers import DistilBertTokenizerFast, DistilBertForQuestionAnswering
+from transformers import DistilBertTokenizerFast, DistilBertForQuestionAnswering, pipeline
 
 class ImprovedDistilBERTQATester:
     """Improved test class for DistilBERT financial Q&A model."""
@@ -42,7 +42,7 @@ class ImprovedDistilBERTQATester:
             return False
     
     def answer_question(self, question, context=None, max_length=512):
-        """Answer a question using the improved fine-tuned model."""
+        """Answer a question using the improved fine-tuned model with standard confidence."""
         if not self.model or not self.tokenizer:
             return "Model not loaded. Please load the model first.", 0.0
         
@@ -52,6 +52,31 @@ class ImprovedDistilBERTQATester:
         if context is None:
             return "No context available. Please load context first.", 0.0
         
+        # Use Hugging Face pipeline for standard confidence calculation
+        try:
+            qa_pipeline = pipeline(
+                "question-answering",
+                model=self.model,
+                tokenizer=self.tokenizer,
+                device=0 if torch.cuda.is_available() else -1
+            )
+            
+            result = qa_pipeline(question=question, context=context)
+            
+            answer = result['answer'].strip()
+            confidence = result['score']  # Standard confidence score
+            
+            # Clean up answer
+            answer = self.clean_answer(answer)
+            
+            return answer, confidence
+            
+        except Exception as e:
+            # Fallback to manual method with standard confidence
+            return self.answer_question_fallback(question, context, max_length)
+    
+    def answer_question_fallback(self, question, context, max_length=512):
+        """Fallback method with standard confidence calculation."""
         # Tokenize input
         inputs = self.tokenizer(
             question,
@@ -69,14 +94,28 @@ class ImprovedDistilBERTQATester:
         with torch.no_grad():
             outputs = self.model(**inputs)
         
-        # Get answer span with improved decoding
-        start_logits = outputs.start_logits
-        end_logits = outputs.end_logits
+        # Standard confidence calculation (SQuAD-style)
+        start_logits = outputs.start_logits[0]
+        end_logits = outputs.end_logits[0]
         
-        # Use improved answer extraction
-        answer, confidence = self.extract_best_answer(
-            inputs['input_ids'][0], start_logits[0], end_logits[0]
-        )
+        start_probs = torch.softmax(start_logits, dim=0)
+        end_probs = torch.softmax(end_logits, dim=0)
+        
+        # Find best positions
+        start_idx = torch.argmax(start_probs)
+        end_idx = torch.argmax(end_probs)
+        
+        # Ensure valid span
+        if end_idx < start_idx:
+            end_idx = start_idx
+        
+        # Extract answer
+        answer_tokens = inputs['input_ids'][0][start_idx:end_idx+1]
+        answer = self.tokenizer.decode(answer_tokens, skip_special_tokens=True)
+        answer = self.clean_answer(answer)
+        
+        # STANDARD confidence calculation (most common in literature)
+        confidence = float(start_probs[start_idx] * end_probs[end_idx])
         
         return answer, confidence
     
