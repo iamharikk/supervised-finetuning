@@ -1,7 +1,7 @@
 import torch
 import json
 from transformers import (
-    DistilBertTokenizer, 
+    DistilBertTokenizerFast, 
     DistilBertForQuestionAnswering,
     Trainer,
     TrainingArguments,
@@ -128,7 +128,7 @@ class DistilBERTFinancialQA:
         """Initialize tokenizer and model."""
         print("Loading DistilBERT tokenizer and model...")
         
-        self.tokenizer = DistilBertTokenizer.from_pretrained(self.model_name)
+        self.tokenizer = DistilBertTokenizerFast.from_pretrained(self.model_name)
         self.model = DistilBertForQuestionAnswering.from_pretrained(self.model_name)
         
         print(f"Model loaded: {self.model_name}")
@@ -205,7 +205,7 @@ class DistilBERTFinancialQA:
         if model_path is None:
             model_path = self.output_dir
         
-        self.tokenizer = DistilBertTokenizer.from_pretrained(model_path)
+        self.tokenizer = DistilBertTokenizerFast.from_pretrained(model_path)
         self.model = DistilBertForQuestionAnswering.from_pretrained(model_path)
         self.model.eval()
         print(f"Fine-tuned model loaded from {model_path}")

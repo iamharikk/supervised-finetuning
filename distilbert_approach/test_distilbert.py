@@ -1,6 +1,6 @@
 import torch
 import json
-from transformers import DistilBertTokenizer, DistilBertForQuestionAnswering
+from transformers import DistilBertTokenizerFast, DistilBertForQuestionAnswering
 from finetune_distilbert import DistilBERTFinancialQA
 
 class DistilBERTQATester:
@@ -17,7 +17,7 @@ class DistilBERTQATester:
         """Load the fine-tuned DistilBERT model."""
         try:
             print(f"Loading model from {self.model_path}...")
-            self.tokenizer = DistilBertTokenizer.from_pretrained(self.model_path)
+            self.tokenizer = DistilBertTokenizerFast.from_pretrained(self.model_path)
             self.model = DistilBertForQuestionAnswering.from_pretrained(self.model_path)
             self.model.to(self.device)
             self.model.eval()
